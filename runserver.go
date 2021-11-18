@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"github.com/ddddanil/i.go/api"
 	"github.com/ddddanil/i.go/shortener"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"time"
 )
 
 func initDb() (db *gorm.DB, err error) {
@@ -24,13 +26,23 @@ func initDb() (db *gorm.DB, err error) {
 	return
 }
 
+func UseDbContext(db *gorm.DB) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		timeoutContext, stop := context.WithTimeout(context.Background(), time.Second)
+		c.Set("DB", db.WithContext(timeoutContext))
+		c.Next()
+		stop()
+	}
+}
+
 func main() {
 	db, err := initDb()
 	if err != nil {
 		panic(err)
 	}
 	router := gin.Default()
-	gApi := router.Group("/api")
-	api.RegisterApi(gApi, db)
+	router.Use(UseDbContext(db))
+	apiGroup := router.Group("/api")
+	api.RegisterApi(apiGroup, db)
 	log.Fatalln(router.Run(":8080"))
 }

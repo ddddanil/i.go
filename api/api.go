@@ -8,13 +8,8 @@ import (
 	"time"
 )
 
-type api struct {
-	tx *gorm.DB
-}
-
 func RegisterApi(router *gin.RouterGroup, tx *gorm.DB) {
-	api := api{tx}
-	router.POST("/register", api.registerUrl)
+	router.POST("/register", registerUrl)
 }
 
 type urlView struct {
@@ -22,7 +17,8 @@ type urlView struct {
 	expireIn int
 }
 
-func (api *api) registerUrl(c *gin.Context) {
+func registerUrl(c *gin.Context) {
+	db := c.MustGet("DB").(*gorm.DB)
 	var url urlView
 	if err := c.ShouldBind(&url); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -35,8 +31,9 @@ func (api *api) registerUrl(c *gin.Context) {
 	} else {
 		short = shortener.NewShortUrl(url.url)
 	}
-	api.tx.Create(&short)
+	db.Create(&short)
 	c.JSON(http.StatusOK, gin.H{
 		"short": short.Shortened,
 	})
+	return
 }
