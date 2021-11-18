@@ -10,29 +10,37 @@ import (
 var ExpirationDuration time.Duration
 
 func init() {
-	var err error
-	ExpirationDuration, err = time.ParseDuration("48h")
-	if err != nil {
-		panic("Cannot initialize shortener")
-	}
+	ExpirationDuration = 48 * time.Hour
 }
 
 type ShortUrl struct {
 	gorm.Model
-	redirect, shortened string
-	expiresAt           time.Time
+	Redirect, Shortened string
+	ExpiresAt           time.Time
 }
 
-func NewShortUrl(url string) ShortUrl {
-	return ShortUrl{
-		redirect:  url,
-		shortened: "",
-		expiresAt: time.Now().Add(ExpirationDuration),
+type ShortUrlOption func(url *ShortUrl)
+
+func WithExpiration(duration time.Duration) ShortUrlOption {
+	return func(url *ShortUrl) {
+		url.ExpiresAt = time.Now().Add(duration)
 	}
 }
 
+func NewShortUrl(url string, options ...ShortUrlOption) ShortUrl {
+	def := ShortUrl{
+		Redirect:  url,
+		Shortened: "",
+		ExpiresAt: time.Now().Add(ExpirationDuration),
+	}
+	for _, opt := range options {
+		opt(&def)
+	}
+	return def
+}
+
 func GetShortUrl(short string, tx *gorm.DB) (result ShortUrl, err error) {
-	r := tx.First(&result, "shortened = ? AND expires_at > localtime", short)
+	r := tx.First(&result, "Shortened = ? AND expires_at > localtime", short)
 	err = r.Error
 	if err != nil {
 		return
@@ -42,8 +50,8 @@ func GetShortUrl(short string, tx *gorm.DB) (result ShortUrl, err error) {
 
 func (url *ShortUrl) BeforeCreate(tx *gorm.DB) (err error) {
 	hasher := sha256.New()
-	hasher.Write([]byte(url.redirect))
+	hasher.Write([]byte(url.Redirect))
 	sha := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-	url.shortened = sha[:6]
+	url.Shortened = sha[:6]
 	return nil
 }
