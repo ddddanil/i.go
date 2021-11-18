@@ -43,7 +43,7 @@ func (pq *priorityQueue) update(item *ShortUrl, value string, priority int) {
 
 func DeleteExpired(tx *gorm.DB) (quit chan bool) {
 	quit = make(chan bool)
-	dbUpdateDuration, err := time.ParseDuration("+1m")
+	dbUpdateDuration, err := time.ParseDuration("1m")
 	if err != nil {
 		return nil
 	}

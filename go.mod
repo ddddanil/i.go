@@ -1,4 +1,4 @@
-module i.go
+module github.com/ddddanil/i.go
 
 go 1.17
 

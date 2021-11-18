@@ -11,8 +11,8 @@ var ExpirationDuration time.Duration
 
 func init() {
 	var err error
-	ExpirationDuration, err = time.ParseDuration("+48h")
-	if err == nil {
+	ExpirationDuration, err = time.ParseDuration("48h")
+	if err != nil {
 		panic("Cannot initialize shortener")
 	}
 }

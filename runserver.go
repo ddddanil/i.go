@@ -1,11 +1,11 @@
-package runserver
+package main
 
 import (
+	"github.com/ddddanil/i.go/api"
+	"github.com/ddddanil/i.go/shortener"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"i.go/api"
-	"i.go/shortener"
 	"log"
 )
 
