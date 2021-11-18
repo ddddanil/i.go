@@ -9,7 +9,7 @@ type api struct {
 	tx *gorm.DB
 }
 
-func RegisterApi(router *gin.Engine, tx *gorm.DB) {
+func RegisterApi(router *gin.RouterGroup, tx *gorm.DB) {
 	api := api{tx}
 	router.POST("/register", api.registerUrl)
 }
