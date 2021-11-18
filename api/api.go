@@ -1,10 +1,19 @@
 package api
 
-import "net/http"
+import (
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
 
-type Api struct{}
+type api struct {
+	tx *gorm.DB
+}
 
-func NewApi() http.Handler {
-	mux := http.NewServeMux()
-	return mux
+func RegisterApi(router *gin.Engine, tx *gorm.DB) {
+	api := api{tx}
+	router.POST("/register", api.registerUrl)
+}
+
+func (api *api) registerUrl(g *gin.Context) {
+
 }
