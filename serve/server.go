@@ -6,6 +6,7 @@ import (
 	"github.com/ddddanil/i.go/api"
 	"github.com/ddddanil/i.go/shortener"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/sync/errgroup"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -57,49 +58,81 @@ func configRouter(db *gorm.DB) http.Handler {
 	return router
 }
 
-func Run() {
-	global, cancelGlobal := context.WithCancel(context.Background())
-	defer cancelGlobal()
-	db, err := initDb()
-	if err != nil {
-		panic(err)
-	}
-	router := configRouter(db)
-	srv := &http.Server{
+func SystemQuit() <-chan os.Signal {
+	quit := make(chan os.Signal)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be caught, so don't need to add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	return quit
+}
+
+func startServer(h http.Handler) (srv *http.Server, e *errgroup.Group, ctx context.Context) {
+	srv = &http.Server{
 		Addr:    ":8080",
-		Handler: router,
+		Handler: h,
 	}
+
+	e, ctx = errgroup.WithContext(context.Background())
 
 	// Initializing the serve in a goroutine so that
 	// it won't block the graceful shutdown handling below
-	go func() {
+	e.Go(func() error {
 		err := srv.ListenAndServe()
 		if err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Printf("listen: %s\n", err)
 		} else if err != nil {
 			log.Fatal(err)
 		}
-	}()
-	shortener.DeleteExpired(global, db)
+		return err
+	})
+	return srv, e, ctx
+}
 
-	// Wait for interrupt signal to gracefully shutdown the serve with
-	// a timeout of 5 seconds.
-	quit := make(chan os.Signal)
-	// kill (no param) default send syscall.SIGTERM
-	// kill -2 is syscall.SIGINT
-	// kill -9 is syscall.SIGKILL but can't be caught, so don't need to add it
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	log.Println("Shutting down serve...")
+func WaitAsync(e *errgroup.Group) <-chan error {
+	result := make(chan error)
+	go func() {
+		err := e.Wait()
+		result <- err
+	}()
+	return result
+}
+
+func ShutdownServer(srv *http.Server) {
+	log.Println("Shutting down server...")
 
 	// The context is used to inform the serve it has 5 seconds to finish
 	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(global, 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown:", err)
 	}
+}
 
-	log.Println("Server exiting")
+func Run() {
+	db, err := initDb()
+	if err != nil {
+		panic(err)
+	}
+	router := configRouter(db)
+	srv, e, ctx := startServer(router)
+	shortener.DeleteExpired(ctx, db)
+
+	serverError := WaitAsync(e)
+	systemQuit := SystemQuit()
+
+	for {
+		select {
+		case err = <-serverError:
+			if err != nil {
+				log.Fatal(err)
+			}
+			return
+		case <-systemQuit:
+			ShutdownServer(srv)
+			return
+		}
+	}
 }

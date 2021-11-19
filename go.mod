@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/gin-gonic/gin v1.7.4
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gorm.io/driver/postgres v1.2.2
 	gorm.io/gorm v1.22.3
 )
