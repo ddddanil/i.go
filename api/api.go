@@ -14,8 +14,8 @@ func RegisterApi(router *gin.RouterGroup) {
 }
 
 type urlView struct {
-	url      string `binding:"required"`
-	expireIn int
+	Url      string `json:"url" form:"url" binding:"required"`
+	ExpireIn int    `json:"expireIn" form:"expireIn"`
 }
 
 func registerUrl(c *gin.Context) {
@@ -26,11 +26,11 @@ func registerUrl(c *gin.Context) {
 		return
 	}
 	var short shortener.ShortUrl
-	if url.expireIn != 0 {
-		short = shortener.NewShortUrl(url.url,
-			shortener.WithExpiration(time.Duration(url.expireIn)*time.Minute))
+	if url.ExpireIn != 0 {
+		short = shortener.NewShortUrl(url.Url,
+			shortener.WithExpiration(time.Duration(url.ExpireIn)*time.Minute))
 	} else {
-		short = shortener.NewShortUrl(url.url)
+		short = shortener.NewShortUrl(url.Url)
 	}
 	err := db.Transaction(func(tx *gorm.DB) error {
 		tx.Create(&short)
@@ -46,7 +46,7 @@ func registerUrl(c *gin.Context) {
 }
 
 type getView struct {
-	short string `form:"short" binding:"required"`
+	Short string `json:"short" form:"short" binding:"required"`
 }
 
 func getUrl(c *gin.Context) {
@@ -56,7 +56,7 @@ func getUrl(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	short, err := shortener.GetShortUrl(form.short, db)
+	short, err := shortener.GetShortUrl(form.Short, db)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": "This link does not exist or is expired"})
 		return

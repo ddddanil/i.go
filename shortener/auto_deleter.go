@@ -52,7 +52,7 @@ func DeleteExpired(ctx context.Context, db *gorm.DB) {
 			case <-dbUpdateTimeout:
 				log.Printf("Deleting expired URLs")
 				err := db.Transaction(func(tx *gorm.DB) error {
-					tx.Where("expires_at < localtime").Delete(ShortUrl{})
+					tx.Where("expires_at < now()").Delete(&ShortUrl{})
 					return tx.Error
 				})
 				if err != nil {

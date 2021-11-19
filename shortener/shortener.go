@@ -7,11 +7,7 @@ import (
 	"time"
 )
 
-var ExpirationDuration time.Duration
-
-func init() {
-	ExpirationDuration = 48 * time.Hour
-}
+const ExpirationDuration = 1 * time.Minute
 
 type ShortUrl struct {
 	gorm.Model
@@ -40,7 +36,7 @@ func NewShortUrl(url string, options ...ShortUrlOption) ShortUrl {
 }
 
 func GetShortUrl(short string, tx *gorm.DB) (result ShortUrl, err error) {
-	r := tx.First(&result, "shortened = ? AND expires_at > localtime", short)
+	r := tx.First(&result, "shortened = ? AND expires_at > now()", short)
 	err = r.Error
 	if err != nil {
 		return
