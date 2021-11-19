@@ -1,10 +1,20 @@
 POST http://localhost:8080/api/register
 Content-Type: application/x-www-form-urlencoded
 
+url=https://google.com
+
+###
+POST http://localhost:8080/api/register
+Content-Type: application/x-www-form-urlencoded
+
 url=https://maps.google.com&expireIn=1
 
 ###
-GET http://localhost:8080/api/get?short=-2H3cQ
+GET http://localhost:8080/api/redirect?short=-2H3cQ
+Accept: application/json
+
+###
+GET http://localhost:8080/BQRvJs
 Accept: application/json
 
 ###

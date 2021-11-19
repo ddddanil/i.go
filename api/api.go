@@ -10,7 +10,7 @@ import (
 
 func RegisterApi(router *gin.RouterGroup) {
 	router.POST("/register", registerUrl)
-	router.GET("/get", getUrl)
+	router.GET("/redirect", getUrl)
 }
 
 type urlView struct {

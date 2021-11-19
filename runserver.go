@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,7 +18,7 @@ import (
 )
 
 func initDb() (db *gorm.DB, err error) {
-	dsn := "host=localhost user=postgres password=postgres dbname=igo port=5432"
+	dsn := "host=localhost user=igo password=igo dbname=igo port=5432"
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		SkipDefaultTransaction: true,
 	})
@@ -47,6 +48,12 @@ func configRouter(db *gorm.DB) http.Handler {
 	router.Use(UseDbContext(db))
 	apiGroup := router.Group("/api")
 	api.RegisterApi(apiGroup)
+	router.GET("/:short", func(c *gin.Context) {
+		short := c.Param("short")
+		c.Request.Form = url.Values{"short": []string{short}}
+		c.Request.URL.Path = "/api/redirect"
+		router.HandleContext(c)
+	})
 	return router
 }
 

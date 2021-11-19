@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-const ExpirationDuration = 1 * time.Minute
+const ExpirationDuration = 48 * time.Hour
 
 type ShortUrl struct {
 	gorm.Model
