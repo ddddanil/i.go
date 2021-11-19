@@ -40,7 +40,7 @@ func NewShortUrl(url string, options ...ShortUrlOption) ShortUrl {
 }
 
 func GetShortUrl(short string, tx *gorm.DB) (result ShortUrl, err error) {
-	r := tx.First(&result, "Shortened = ? AND expires_at > localtime", short)
+	r := tx.First(&result, "shortened = ? AND expires_at > localtime", short)
 	err = r.Error
 	if err != nil {
 		return

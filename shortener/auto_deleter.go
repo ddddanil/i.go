@@ -1,6 +1,7 @@
 package shortener
 
 import (
+	"context"
 	"gorm.io/gorm"
 	"log"
 	"time"
@@ -42,8 +43,7 @@ func (pq *priorityQueue) update(item *ShortUrl, value string, priority int) {
 }
 */
 
-func DeleteExpired(tx *gorm.DB) (quit chan bool) {
-	quit = make(chan bool)
+func DeleteExpired(ctx context.Context, db *gorm.DB) {
 	dbUpdateDuration := 1 * time.Minute
 	go func() {
 		for {
@@ -51,13 +51,16 @@ func DeleteExpired(tx *gorm.DB) (quit chan bool) {
 			select {
 			case <-dbUpdateTimeout:
 				log.Printf("Deleting expired URLs")
-				tx.Where("expires_at < localtime").Delete(ShortUrl{})
-			case <-quit:
-				// Cleanup
-				quit <- true
+				err := db.Transaction(func(tx *gorm.DB) error {
+					tx.Where("expires_at < localtime").Delete(ShortUrl{})
+					return tx.Error
+				})
+				if err != nil {
+					log.Printf("Could not delete expired URLs: %v", err)
+				}
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
-	return quit
 }
