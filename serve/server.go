@@ -48,7 +48,7 @@ func UseDbContext(db *gorm.DB) gin.HandlerFunc {
 func configRouter(db *gorm.DB) http.Handler {
 	router := gin.Default()
 	router.Use(UseDbContext(db))
-	router.SetHTMLTemplate(html.IndexPage())
+	router.SetHTMLTemplate(html.TemplateHtml())
 	apiGroup := router.Group("/api")
 	api.RegisterApi(apiGroup)
 	router.GET("/", html.IndexHandler)
