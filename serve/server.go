@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/ddddanil/i.go/api"
+	"github.com/ddddanil/i.go/html"
 	"github.com/ddddanil/i.go/shortener"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/sync/errgroup"
@@ -47,8 +48,11 @@ func UseDbContext(db *gorm.DB) gin.HandlerFunc {
 func configRouter(db *gorm.DB) http.Handler {
 	router := gin.Default()
 	router.Use(UseDbContext(db))
+	router.SetHTMLTemplate(html.IndexPage())
 	apiGroup := router.Group("/api")
 	api.RegisterApi(apiGroup)
+	router.GET("/", html.IndexHandler)
+	router.GET("/index", html.IndexHandler)
 	router.GET("/:short", func(c *gin.Context) {
 		short := c.Param("short")
 		c.Request.Form = url.Values{"short": []string{short}}
